@@ -26,10 +26,10 @@ model Sku {
   id          Int          @id @default(autoincrement())
   name        String
   putawayType String?
-  width       Int
-  length      Int
-  height      Int
-  weight      Int
+  width       Float
+  length      Float
+  height      Float
+  weight      Float
   onHand      Int
   price       Decimal
   assignment  Assignment[]
@@ -39,10 +39,10 @@ model PickLocation {
   id          Int         @id @default(autoincrement())
   name        String
   putawayType String
-  width       Int
-  length      Int
-  height      Int
-  maxWeight   Int
+  width       Float
+  length      Float
+  height      Float
+  maxWeight   Float
   assignment  Assignment?
 }
 

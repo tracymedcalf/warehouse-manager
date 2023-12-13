@@ -10,10 +10,10 @@ type RowProps = {
 const Row = ({ id, name, putawayType, sku }: RowProps) => {
     return (
         <tr>
-            <td><Link href={`/${id}`}>{name}</Link></td>
+            <td><Link href={`/picklocation/${id}`}>{name}</Link></td>
             <td>{putawayType}</td>
             {sku == null ? 
-                <td></td>
+                <td>None</td>
                 :
                 <td><Link href={`/sku/${sku.id}`}></Link>{sku.name}</td>
             }
