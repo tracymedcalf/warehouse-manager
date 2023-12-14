@@ -1,9 +1,12 @@
 import * as z from 'zod';
-
-const schema = z.object({
+const box = z.object({
     width: z.number().optional(),
     length: z.number().optional(),
     height: z.number().optional(),
+    putawayType: z.string().optional(),
+});
+export { box };
+const schema = box.extend({
     maxWeight: z.number().optional(),
 })
 export default schema;

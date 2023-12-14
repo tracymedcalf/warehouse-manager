@@ -5,23 +5,24 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import patchSchema from "~/schemas/pickLocation";
 
-type Assignment = { sku: { id: number; name: string; }};
-
-const transformSku = (assignment: Assignment | null) => {
-  return assignment == null ? undefined : {
-    id: assignment.sku.id, name: assignment.sku.name
-  }
-}
+import patchSchema from "~/schemas/sku";
 
 const putawayTypes = ['Bin', 'Liquid', 'Carton Flow', 'Select Rack'];
 
-export const pickLocationRouter = createTRPCRouter({
+type Assignment = { pickLocation: { id: number; name: string; }};
+
+const transformPickLocation = (assignment: Assignment | null) => {
+  return assignment == null ? undefined : {
+    id: assignment.pickLocation.id, name: assignment.pickLocation.name
+  }
+}
+
+export const skuRouter = createTRPCRouter({
   patch: protectedProcedure
     .input(z.object({ id: z.number().int(), data: patchSchema }))
     .mutation(async ({ ctx, input: { id, data } }) => {
-      return await ctx.db.pickLocation.update({
+      return await ctx.db.sku.update({
         data,
         where: { id }
       });
@@ -29,17 +30,17 @@ export const pickLocationRouter = createTRPCRouter({
 
   getById: publicProcedure
     .input(z.object({
-      pickLocationId: z.number().int(),
+      skuId: z.number().int(),
     }))
     .query(async ({ ctx, input }) => {
-      const pickLocation = await ctx.db.pickLocation
+      const sku = await ctx.db.sku
         .findUniqueOrThrow({
           include: {
             assignment: {
-              include: { sku: true }
+              include: { pickLocation: true }
             }
           },
-          where: { id: input.pickLocationId }
+          where: { id: input.skuId }
         });
       const {
         name,
@@ -47,24 +48,24 @@ export const pickLocationRouter = createTRPCRouter({
         width,
         length,
         height,
-        maxWeight,
+        weight,
         assignment
-      } = pickLocation;
+      } = sku;
       return {
         name,
         putawayType,
         width,
         length,
         height,
-        maxWeight,
-        sku: transformSku(assignment),
+        weight,
+        pickLocation: assignment.map(transformPickLocation),
         putawayTypes
       };
     }),
 
   getAll: publicProcedure
     .query(async ({ ctx }) => {
-      return (await ctx.db.pickLocation
+      return (await ctx.db.sku
         .findMany({
           include: {
             assignment: {
@@ -79,13 +80,9 @@ export const pickLocationRouter = createTRPCRouter({
           id,
           name,
           putawayType,
-          sku: transformSku(assignment),
+          numPickLocations: assignment.length,
         };
       })
 
     }),
-
-  getSecretMessage: protectedProcedure.query(() => {
-    return "You are logged into Warehouse Manager!";
-  }),
 });

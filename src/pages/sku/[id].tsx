@@ -4,19 +4,41 @@ import { createSsgHelpers } from "~/helpers/ssgHelper";
 import { FieldValues, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from "~/utils/api";
-import schema from "~/schemas/pickLocation";
+import schema from "~/schemas/sku";
+import { setValueAs } from "~/helpers/setValueAs";
+import Link from 'next/link';
 
-const setValueAs = (v: string) => {
-    if (v === '') return undefined;
-    const n = Number(v);
-    return isNaN(n) ? undefined : n;
+type PickLocation = {
+    name: string;
+    id: number;
+    putawayType: string;
+};
+
+function Row({ id, name, putawayType }: PickLocation) {
+    return (
+        <tr>
+            <td><Link href={`/picklocation/${id}`}>{name}</Link></td>
+        </tr>
+    )
 }
-
+function AssignedPickLocations({ pickLocations }: { pickLocations: PickLocation[] }) {
+    return (
+        <table className="table-auto">
+            <thead>
+                <th>Name</th>
+                <th>Putaway Type</th>
+            </thead>
+            <tbody>
+                {pickLocations.map(p => <Row {...p}></Row>)}
+            </tbody>
+        </table>
+    )
+}
 export default
-    function SinglePagePickLocation(props: { pickLocationId: number }) {
-    const { pickLocationId } = props;
+    function SinglePagesku(props: { skuId: number }) {
+    const { skuId } = props;
 
-    const { data, isLoading, refetch } = api.pickLocation.getById.useQuery({ pickLocationId });
+    const { data, isLoading, refetch } = api.sku.getById.useQuery({ skuId });
 
     if (isLoading) return <div>Loading...</div>;
 
@@ -24,13 +46,13 @@ export default
         resolver: zodResolver(schema)
     });
 
-    const mutation = api.pickLocation.patch.useMutation()
+    const mutation = api.sku.patch.useMutation()
     const utils = api.useUtils();
     if (mutation.isSuccess) {
-        utils.pickLocation.getById.invalidate({ pickLocationId });
+        utils.sku.getById.invalidate({ skuId });
     }
     const onSubmit = (data: FieldValues) => {
-        mutation.mutate({ id: pickLocationId, data });
+        mutation.mutate({ id: skuId, data });
         reset();
     }
     console.log("errors", errors);
@@ -64,14 +86,14 @@ export default
                     placeholder={`${data.height}`}
                     {...register("height", { setValueAs })}
                 />
-                <label>Max Weight</label>
+                <label>Weight</label>
                 <input
                     type="number"
-                    placeholder={`${data.maxWeight}`}
-                    {...register("maxWeight", { setValueAs })}
+                    placeholder={`${data.weight}`}
+                    {...register("weight", { setValueAs })}
                 />
                 <label>Putaway Type</label>
-                <select placeholder={data.putawayType}>
+                <select placeholder={data.putawayType ?? "None"}>
                     {data.putawayTypes.map(p => <option value={p}>{p}</option>)}
                 </select>
                 <input
@@ -93,16 +115,16 @@ export const getStaticProps: GetStaticProps = async (context) => {
 
   if (typeof id !== "string") throw new Error("No id");
   
-  const pickLocationId = parseInt(id);
+  const skuId = parseInt(id);
   
-  if (isNaN(pickLocationId)) throw new Error("Post id must be an integer");
+  if (isNaN(skuId)) throw new Error("Post id must be an integer");
 
-  await ssg.pickLocation.getById.prefetch({ pickLocationId });
+  await ssg.sku.getById.prefetch({ skuId });
 
   return {
     props: {
       trpcState: ssg.dehydrate(),
-      pickLocationId,
+      skuId,
     }
   }
 }

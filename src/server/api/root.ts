@@ -1,4 +1,5 @@
 import { pickLocationRouter } from "~/server/api/routers/pickLocation";
+import { skuRouter } from "~/server/api/routers/sku";
 import { createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -8,6 +9,7 @@ import { createTRPCRouter } from "~/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   pickLocation: pickLocationRouter,
+  sku: skuRouter,
 });
 
 // export type definition of API

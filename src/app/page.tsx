@@ -15,6 +15,9 @@ export default async function Home() {
         <div>
           <Link href="/picklocation">Pick Locations</Link>
         </div>
+        <div>
+          <Link href="/sku">SKUs</Link>
+        </div>
         <div className="flex flex-col items-center gap-2">
           <div className="flex flex-col items-center justify-center gap-4">
             <p className="text-center text-2xl text-white">
