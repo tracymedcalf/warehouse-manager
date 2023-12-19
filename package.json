@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "prisma": {
+    "seed": "node seed-mock-data/main.js"
+  },
   "scripts": {
     "build": "next build",
     "db:push": "prisma db push",

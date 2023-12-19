@@ -25,6 +25,8 @@ model Assignment {
 model Sku {
   id          Int          @id @default(autoincrement())
   name        String       @db.VarChar(10)
+  description String
+  maxType     String
   putawayType String?      @db.VarChar(3)
   width       Float
   length      Float
@@ -33,17 +35,34 @@ model Sku {
   onHand      Int
   price       Decimal      @db.Decimal(15, 2)
   assignment  Assignment[]
+  Inventory   Inventory[]
+}
+
+model Inventory {
+  id             Int          @id @default(autoincrement())
+  pickLocation   PickLocation @relation(fields: [pickLocationId], references: [id])
+  sku            Sku          @relation(fields: [skuId], references: [id])
+  onHand         Int
+  skuId          Int
+  pickLocationId Int
+
+  @@index([pickLocationId])
+  @@index([skuId])
 }
 
 model PickLocation {
   id          Int         @id @default(autoincrement())
+  barcode     String      @db.VarChar(6)
   name        String      @db.VarChar(16)
   putawayType String      @db.VarChar(3)
   width       Float
   length      Float
   height      Float
   maxWeight   Float
+  ranking     Int
+  zone        String      @db.VarChar(3)
   assignment  Assignment?
+  Inventory   Inventory[]
 }
 
 // Necessary for Next auth

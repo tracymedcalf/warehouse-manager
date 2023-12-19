@@ -22,7 +22,7 @@ export default function skus() {
     if (isLoading) return <div>Loading...</div>;
 
     return (
-        <table className="table-auto">
+        <table className="styled-table sm:m-3 table-auto">
             <thead>
                 <tr>
                     <th>Name</th>
