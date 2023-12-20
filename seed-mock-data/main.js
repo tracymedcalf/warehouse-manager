@@ -4,6 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
     const data = new SeedData();
+
     for (const p of data.pickLocations) {
         await prisma.pickLocation.create({
             data: p

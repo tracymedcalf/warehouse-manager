@@ -31,7 +31,7 @@ export default class LocationBuilder
                         continue;
                     }
                     const bay = b.toString().padStart(3, '0');
-                    const position = p.toString().padStart(3, '0');
+                    const position = p.toString().padStart(2, '0');
                     
                     this.counter++;
 

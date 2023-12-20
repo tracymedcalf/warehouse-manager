@@ -170,6 +170,5 @@ export default class SeedData {
     constructor() {
         this.skus = this.generateSkus();
         this.pickLocations = this.generatePickLocations();
-        // GENERATE ASSIGNMENT
     }
 }

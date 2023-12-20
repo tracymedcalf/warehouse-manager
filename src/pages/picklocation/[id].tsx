@@ -5,6 +5,7 @@ import { FieldValues, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from "~/utils/api";
 import schema from "~/schemas/pickLocation";
+import Layout from '~/components/layout';
 
 const setValueAs = (v: string) => {
     if (v === '') return undefined;
@@ -38,75 +39,77 @@ export default
         return <p>404 Not Found</p>;
     }
     return (
-        <div>
-            <div className="sm:px-6 px-2 py-4">
-                <h1 className="text-4xl">{data.name}</h1>
+        <Layout>
+            <div>
+                <div className="sm:px-6 px-2 py-4">
+                    <h1 className="text-4xl">{data.name}</h1>
+                </div>
+                <form
+                    className="gap-y-4 grid grid-cols-1 sm:px-6 px-2"
+                    onSubmit={handleSubmit(onSubmit)}
+                >
+                    <label>Width</label>
+                    <input
+                        type="number"
+                        placeholder={`${data.width}`}
+                        {...register("width", { setValueAs })}
+                    />
+                    <label>Length</label>
+                    <input
+                        type="number"
+                        placeholder={`${data.length}`}
+                        {...register("length", { setValueAs })}
+                    />
+                    <label>Height</label>
+                    <input
+                        type="number"
+                        placeholder={`${data.height}`}
+                        {...register("height", { setValueAs })}
+                    />
+                    <label>Max Weight</label>
+                    <input
+                        type="number"
+                        placeholder={`${data.maxWeight}`}
+                        {...register("maxWeight", { setValueAs })}
+                    />
+                    <label>Putaway Type</label>
+                    <select placeholder={data.putawayType}>
+                        {data.putawayTypes.map(p => <option value={p}>{p}</option>)}
+                    </select>
+                    <input
+                        className="border-2 max-w-xs border-white hover:bg-slate-500"
+                        disabled={mutation.isLoading}
+                        type="submit"
+                    />
+                    {mutation.error && <p>Something went wrong!</p>}
+                </form>
             </div>
-            <form
-                className="gap-y-4 grid grid-cols-1 sm:px-6 px-2"
-                onSubmit={handleSubmit(onSubmit)}
-            >
-                <label>Width</label>
-                <input
-                    type="number"
-                    placeholder={`${data.width}`}
-                    {...register("width", { setValueAs })}
-                />
-                <label>Length</label>
-                <input
-                    type="number"
-                    placeholder={`${data.length}`}
-                    {...register("length", { setValueAs })}
-                />
-                <label>Height</label>
-                <input
-                    type="number"
-                    placeholder={`${data.height}`}
-                    {...register("height", { setValueAs })}
-                />
-                <label>Max Weight</label>
-                <input
-                    type="number"
-                    placeholder={`${data.maxWeight}`}
-                    {...register("maxWeight", { setValueAs })}
-                />
-                <label>Putaway Type</label>
-                <select placeholder={data.putawayType}>
-                    {data.putawayTypes.map(p => <option value={p}>{p}</option>)}
-                </select>
-                <input
-                    className="border-2 max-w-xs border-white hover:bg-slate-500"
-                    disabled={mutation.isLoading}
-                    type="submit"
-                />
-                {mutation.error && <p>Something went wrong!</p>}
-            </form>
-        </div>
+        </Layout>
     );
 }
 
 export const getStaticProps: GetStaticProps = async (context) => {
 
-  const ssg = createSsgHelpers();
+    const ssg = createSsgHelpers();
 
-  const id = context.params?.id;
+    const id = context.params?.id;
 
-  if (typeof id !== "string") throw new Error("No id");
-  
-  const pickLocationId = parseInt(id);
-  
-  if (isNaN(pickLocationId)) throw new Error("Post id must be an integer");
+    if (typeof id !== "string") throw new Error("No id");
 
-  await ssg.pickLocation.getById.prefetch({ pickLocationId });
+    const pickLocationId = parseInt(id);
 
-  return {
-    props: {
-      trpcState: ssg.dehydrate(),
-      pickLocationId,
+    if (isNaN(pickLocationId)) throw new Error("Post id must be an integer");
+
+    await ssg.pickLocation.getById.prefetch({ pickLocationId });
+
+    return {
+        props: {
+            trpcState: ssg.dehydrate(),
+            pickLocationId,
+        }
     }
-  }
 }
 
 export const getStaticPaths = () => {
-  return { paths: [], fallback: "blocking" };
+    return { paths: [], fallback: "blocking" };
 }

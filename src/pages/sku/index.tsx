@@ -24,6 +24,7 @@ import {
     compareItems,
 } from '@tanstack/match-sorter-utils'
 import { api } from "~/utils/api";
+import Layout from "~/components/layout";
 
 declare module '@tanstack/table-core' {
     interface FilterFns {
@@ -137,6 +138,7 @@ export default function Skus() {
     if (isLoading) return <div>Loading...</div>;
 
     return (
+        <Layout>
         <div className="p-2">
             <div>
                 <DebouncedInput
@@ -269,6 +271,7 @@ export default function Skus() {
             </div>
             <div>{table.getPrePaginationRowModel().rows.length} Rows</div>
         </div>
+        </Layout>
     )
 }
 

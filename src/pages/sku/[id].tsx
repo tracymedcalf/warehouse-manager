@@ -7,6 +7,7 @@ import { api } from "~/utils/api";
 import schema from "~/schemas/sku";
 import { setValueAs } from "~/helpers/setValueAs";
 import Link from 'next/link';
+import Layout from '~/components/layout';
 
 type PickLocation = {
     name: string;
@@ -60,6 +61,7 @@ export default
         return <p>404 Not Found</p>;
     }
     return (
+        <Layout>
         <div>
             <div className="sm:px-6 px-2 py-4">
                 <h1 className="text-4xl">{data.name}</h1>
@@ -104,6 +106,7 @@ export default
                 {mutation.error && <p>Something went wrong!</p>}
             </form>
         </div>
+        </Layout>
     );
 }
 
