@@ -76,7 +76,15 @@ export default function Skus() {
         () => [
             {
                 accessorKey: 'name',
-                cell: info => <Link href={`/sku/${info.row.original.id}`}>{info.getValue()}</Link>,
+                cell: info => {
+                    return (
+                        <Link
+                            href={`/sku/${info.row.original.id}`}
+                        >
+                            {info.getValue()}
+                        </Link>
+                    );
+                },
                 header: "Name",
             },
             {
