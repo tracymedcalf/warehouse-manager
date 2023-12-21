@@ -50,7 +50,7 @@ export default
     const mutation = api.sku.patch.useMutation()
     const utils = api.useUtils();
     if (mutation.isSuccess) {
-        utils.sku.getById.invalidate({ skuId });
+        void utils.sku.getById.invalidate({ skuId });
     }
     const onSubmit = (data: FieldValues) => {
         mutation.mutate({ id: skuId, data });

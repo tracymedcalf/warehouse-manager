@@ -1,10 +1,10 @@
 import Link from "next/link";
 import React from 'react'
 import {
-    Column,
-    Table,
+    type Column,
+    type Table,
     useReactTable,
-    ColumnFiltersState,
+    type ColumnFiltersState,
     getCoreRowModel,
     getFilteredRowModel,
     getFacetedRowModel,
@@ -13,13 +13,13 @@ import {
     getPaginationRowModel,
     sortingFns,
     getSortedRowModel,
-    FilterFn,
-    SortingFn,
-    ColumnDef,
+    type FilterFn,
+    type SortingFn,
+    type ColumnDef,
     flexRender,
 } from '@tanstack/react-table'
 import {
-    RankingInfo,
+    type RankingInfo,
     rankItem,
     compareItems,
 } from '@tanstack/match-sorter-utils'
@@ -54,8 +54,8 @@ const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
     // Only sort by rank if the column has ranking information
     if (rowA.columnFiltersMeta[columnId]) {
         dir = compareItems(
-            rowA.columnFiltersMeta[columnId]?.itemRank!,
-            rowB.columnFiltersMeta[columnId]?.itemRank!
+            rowA.columnFiltersMeta[columnId]!.itemRank,
+            rowB.columnFiltersMeta[columnId]!.itemRank
         )
     }
 

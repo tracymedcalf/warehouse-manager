@@ -26,11 +26,11 @@ type SkuLocSubset = {
 }
 
 function sortToBins(array: SkuLocSubset[]) {
-  const bins: { [key: string]: SkuLocSubset[] } = {};
+  const bins: Record<string, SkuLocSubset[]> = {};
 
   for (const el of array) {
     const { putawayType } = el;
-    const bin = bins[putawayType];
+    const bin: SkuLocSubset[] | undefined = bins[putawayType];
     if (bin != null) {
       bin.push(el);
     } else {
@@ -190,6 +190,6 @@ export const skuRouter = createTRPCRouter({
         });
       }
 
-      return { assignments, skusCantAssign }
+      return { assignments, skusCantAssign };
     }),
 });

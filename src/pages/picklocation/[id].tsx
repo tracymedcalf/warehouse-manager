@@ -28,7 +28,7 @@ export default
     const mutation = api.pickLocation.patch.useMutation()
     const utils = api.useUtils();
     if (mutation.isSuccess) {
-        utils.pickLocation.getById.invalidate({ pickLocationId });
+        void utils.pickLocation.getById.invalidate({ pickLocationId });
     }
     const onSubmit = (data: FieldValues) => {
         mutation.mutate({ id: pickLocationId, data });

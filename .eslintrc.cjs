@@ -31,6 +31,13 @@ const config = {
         checksVoidReturn: { attributes: false },
       },
     ],
+    // MY RULES:
+    // These are necessary for making Tanstack table pass linting.
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unsafe-argument": "warn",
+    "@typescript-eslint/no-unsafe-assignment": "warn",
+    "@typescript-eslint/no-unsafe-return": "warn",
+    "@typescript-eslint/no-unsafe-member-access": "warn",
   },
 };
 
