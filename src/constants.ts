@@ -1,0 +1,1 @@
+export var NO_PUTAWAY_TYPE = 0;

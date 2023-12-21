@@ -1,10 +1,12 @@
+import type { Sku } from "@prisma/client";
 import Link from "next/link";
-import React from 'react'
+import React, { HTMLProps } from 'react'
 import {
     Column,
     Table,
     useReactTable,
     ColumnFiltersState,
+    createColumnHelper,
     getCoreRowModel,
     getFilteredRowModel,
     getFacetedRowModel,
@@ -25,6 +27,7 @@ import {
 } from '@tanstack/match-sorter-utils'
 import { api } from "~/utils/api";
 import Layout from "~/components/layout";
+import AutoAssign from "~/components/autoAssign";
 
 declare module '@tanstack/table-core' {
     interface FilterFns {
@@ -63,10 +66,10 @@ const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
     return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir
 }
 
-type Sku = any;
-
 export default function Skus() {
     const { data, isLoading } = api.sku.getAll.useQuery();
+
+    const [rowSelection, setRowSelection] = React.useState({})
 
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
@@ -75,6 +78,30 @@ export default function Skus() {
 
     const columns = React.useMemo<ColumnDef<Sku, any>[]>(
         () => [
+            {
+                id: 'select',
+                header: ({ table }) => (
+                    <IndeterminateCheckbox
+                        {...{
+                            checked: table.getIsAllRowsSelected(),
+                            indeterminate: table.getIsSomeRowsSelected(),
+                            onChange: table.getToggleAllRowsSelectedHandler(),
+                        }}
+                    />
+                ),
+                cell: ({ row }) => (
+                    <div className="px-1">
+                        <IndeterminateCheckbox
+                            {...{
+                                checked: row.getIsSelected(),
+                                disabled: !row.getCanSelect(),
+                                indeterminate: row.getIsSomeSelected(),
+                                onChange: row.getToggleSelectedHandler(),
+                            }}
+                        />
+                    </div>
+                ),
+            },
             {
                 accessorKey: 'name',
                 cell: info => {
@@ -111,7 +138,10 @@ export default function Skus() {
         state: {
             columnFilters,
             globalFilter,
+            rowSelection,
         },
+        enableRowSelection: true, //enable row selection for all rows
+        onRowSelectionChange: setRowSelection,
         onColumnFiltersChange: setColumnFilters,
         onGlobalFilterChange: setGlobalFilter,
         globalFilterFn: fuzzyFilter,
@@ -135,142 +165,174 @@ export default function Skus() {
         }
     }, [table.getState().columnFilters[0]?.id])
 
+    const mutation = api.sku.autoAssign.useMutation();
+
+    const handleClick = () => {
+        if (data == null) {
+            return;
+        }
+        const keys = Object.keys(rowSelection);
+        const selected = keys
+            .map(i => data[parseInt(i)]?.id)
+            .filter((s): s is number => s != null);
+        if (selected.length < keys.length) {
+            return;
+        }
+        mutation.mutate(selected);
+    };
+
     if (isLoading) return <div>Loading...</div>;
+    if (mutation.isLoading) {
+        return (
+            <div>
+                Finding pick locations for these SKUs. Please wait.
+            </div>
+        );
+    }
+
+    if (mutation.isError) {
+        return <AutoAssignFailure />;
+    }
+
+    if (mutation.isSuccess) {
+        return <AutoAssign data={mutation.data} />;
+    }
 
     return (
         <Layout>
-        <div className="p-2">
-            <div>
-                <DebouncedInput
-                    value={globalFilter ?? ''}
-                    onChange={value => setGlobalFilter(String(value))}
-                    className="p-2 font-lg shadow border border-block"
-                    placeholder="Search all columns..."
-                />
-            </div>
-            <div className="h-2" />
-            <table>
-                <thead>
-                    {table.getHeaderGroups().map(headerGroup => (
-                        <tr key={headerGroup.id}>
-                            {headerGroup.headers.map(header => {
-                                return (
-                                    <th key={header.id} colSpan={header.colSpan}>
-                                        {header.isPlaceholder ? null : (
-                                            <>
-                                                <div
-                                                    {...{
-                                                        className: header.column.getCanSort()
-                                                            ? 'cursor-pointer select-none'
-                                                            : '',
-                                                        onClick: header.column.getToggleSortingHandler(),
-                                                    }}
-                                                >
-                                                    {flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext()
-                                                    )}
-                                                    {{
-                                                        asc: ' 🔼',
-                                                        desc: ' 🔽',
-                                                    }[header.column.getIsSorted() as string] ?? null}
-                                                </div>
-                                                {header.column.getCanFilter() ? (
-                                                    <div>
-                                                        <Filter column={header.column} table={table} />
-                                                    </div>
-                                                ) : null}
-                                            </>
-                                        )}
-                                    </th>
-                                )
-                            })}
-                        </tr>
-                    ))}
-                </thead>
-                <tbody>
-                    {table.getRowModel().rows.map(row => {
-                        return (
-                            <tr key={row.id}>
-                                {row.getVisibleCells().map(cell => {
+            <button onClick={handleClick}>Auto Assign {Object.keys(rowSelection).length} SKUs</button>
+            <div className="p-2">
+                <div>
+                    <DebouncedInput
+                        value={globalFilter ?? ''}
+                        onChange={value => setGlobalFilter(String(value))}
+                        className="p-2 font-lg shadow border border-block"
+                        placeholder="Search all columns..."
+                    />
+                </div>
+                <div className="h-2" />
+                <table>
+                    <thead>
+                        {table.getHeaderGroups().map(headerGroup => (
+                            <tr key={headerGroup.id}>
+                                {headerGroup.headers.map(header => {
                                     return (
-                                        <td key={cell.id}>
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
+                                        <th key={header.id} colSpan={header.colSpan}>
+                                            {header.isPlaceholder ? null : (
+                                                <>
+                                                    <div
+                                                        {...{
+                                                            className: header.column.getCanSort()
+                                                                ? 'cursor-pointer select-none'
+                                                                : '',
+                                                            onClick: header.column.getToggleSortingHandler(),
+                                                        }}
+                                                    >
+                                                        {flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext()
+                                                        )}
+                                                        {{
+                                                            asc: ' 🔼',
+                                                            desc: ' 🔽',
+                                                        }[header.column.getIsSorted() as string] ?? null}
+                                                    </div>
+                                                    {header.column.getCanFilter() ? (
+                                                        <div>
+                                                            <Filter column={header.column} table={table} />
+                                                        </div>
+                                                    ) : null}
+                                                </>
                                             )}
-                                        </td>
+                                        </th>
                                     )
                                 })}
                             </tr>
-                        )
-                    })}
-                </tbody>
-            </table>
-            <div className="h-2" />
-            <div className="flex items-center gap-2">
-                <button
-                    className="border rounded p-1"
-                    onClick={() => table.setPageIndex(0)}
-                    disabled={!table.getCanPreviousPage()}
-                >
-                    {'<<'}
-                </button>
-                <button
-                    className="border rounded p-1"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                >
-                    {'<'}
-                </button>
-                <button
-                    className="border rounded p-1"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                >
-                    {'>'}
-                </button>
-                <button
-                    className="border rounded p-1"
-                    onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                    disabled={!table.getCanNextPage()}
-                >
-                    {'>>'}
-                </button>
-                <span className="flex items-center gap-1">
-                    <div>Page</div>
-                    <strong>
-                        {table.getState().pagination.pageIndex + 1} of{' '}
-                        {table.getPageCount()}
-                    </strong>
-                </span>
-                <span className="flex items-center gap-1">
-                    | Go to page:
-                    <input
-                        type="number"
-                        defaultValue={table.getState().pagination.pageIndex + 1}
+                        ))}
+                    </thead>
+                    <tbody>
+                        {table.getRowModel().rows.map(row => {
+                            return (
+                                <tr key={row.id}>
+                                    {row.getVisibleCells().map(cell => {
+                                        return (
+                                            <td key={cell.id}>
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext()
+                                                )}
+                                            </td>
+                                        )
+                                    })}
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
+                <div className="h-2" />
+                <div className="flex items-center gap-2">
+                    <button
+                        className="border rounded p-1"
+                        onClick={() => table.setPageIndex(0)}
+                        disabled={!table.getCanPreviousPage()}
+                    >
+                        {'<<'}
+                    </button>
+                    <button
+                        className="border rounded p-1"
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage()}
+                    >
+                        {'<'}
+                    </button>
+                    <button
+                        className="border rounded p-1"
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage()}
+                    >
+                        {'>'}
+                    </button>
+                    <button
+                        className="border rounded p-1"
+                        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                        disabled={!table.getCanNextPage()}
+                    >
+                        {'>>'}
+                    </button>
+                    <span className="flex items-center gap-1">
+                        <div>Page</div>
+                        <strong>
+                            {table.getState().pagination.pageIndex + 1} of{' '}
+                            {table.getPageCount()}
+                        </strong>
+                    </span>
+                    <span className="flex items-center gap-1">
+                        | Go to page:
+                        <input
+                            type="number"
+                            defaultValue={table.getState().pagination.pageIndex + 1}
+                            onChange={e => {
+                                const page = e.target.value ? Number(e.target.value) - 1 : 0
+                                table.setPageIndex(page)
+                            }}
+                            className="border p-1 rounded w-16"
+                        />
+                    </span>
+                    <select
+                        value={table.getState().pagination.pageSize}
                         onChange={e => {
-                            const page = e.target.value ? Number(e.target.value) - 1 : 0
-                            table.setPageIndex(page)
+                            table.setPageSize(Number(e.target.value))
                         }}
-                        className="border p-1 rounded w-16"
-                    />
-                </span>
-                <select
-                    value={table.getState().pagination.pageSize}
-                    onChange={e => {
-                        table.setPageSize(Number(e.target.value))
-                    }}
-                >
-                    {[10, 20, 30, 40, 50].map(pageSize => (
-                        <option key={pageSize} value={pageSize}>
-                            Show {pageSize}
-                        </option>
-                    ))}
-                </select>
+                    >
+                        {[10, 20, 30, 40, 50].map(pageSize => (
+                            <option key={pageSize} value={pageSize}>
+                                Show {pageSize}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div>{table.getPrePaginationRowModel().rows.length} Rows</div>
             </div>
-            <div>{table.getPrePaginationRowModel().rows.length} Rows</div>
-        </div>
         </Layout>
     )
 }
@@ -335,8 +397,8 @@ function DebouncedInput({
     debounce = 500,
     ...props
 }: {
-    value: string | number
-    onChange: (value: string | number) => void
+    value: string | number | boolean
+    onChange: (value: string | number | boolean) => void
     debounce?: number
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>) {
     const [value, setValue] = React.useState(initialValue)
@@ -356,4 +418,44 @@ function DebouncedInput({
     return (
         <input {...props} value={value} onChange={e => setValue(e.target.value)} />
     )
+}
+
+function IndeterminateCheckbox({
+    indeterminate,
+    className = '',
+    ...rest
+}: { indeterminate?: boolean } & HTMLProps<HTMLInputElement>) {
+    const ref = React.useRef<HTMLInputElement>(null!)
+
+    React.useEffect(() => {
+        if (typeof indeterminate === 'boolean') {
+            ref.current.indeterminate = !rest.checked && indeterminate
+        }
+    }, [ref, indeterminate])
+
+    return (
+        <input
+            type="checkbox"
+            ref={ref}
+            className={className + ' cursor-pointer'}
+            {...rest}
+        />
+    )
+}
+
+function AutoAssignFailure({ error }: { error: string }) {
+    return (
+        <div>
+            <p>Failure when trying to auto-assign.</p>
+            {error == "UNAUTHORIZED"
+                ? <Link
+                    href="/api/auth/signin"
+                    className="rounded-full bg-white/10 font-semibold underline transition hover:bg-white/20"
+                >
+                    Try signing in?
+                </Link>
+                : <p>Error{" " + error}</p>
+            }
+        </div>
+    );
 }

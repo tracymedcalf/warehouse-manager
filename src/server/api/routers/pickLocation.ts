@@ -71,7 +71,7 @@ export const pickLocationRouter = createTRPCRouter({
               include: { sku: true }
             }
           },
-          take: 100
+          take: 1000
         })
       ).map(row => {
         const { id, name, putawayType, assignment } = row;

@@ -38,3 +38,14 @@
     font-weight: bold;
     color: #009879;
 }
+
+.my-slot-animation {
+    --ch: -5;
+    animation: scroll 1s 1s linear forwards;
+}
+
+@keyframes scroll {
+    to {
+        transform: transformY(var(--ch)*100%);
+    }
+}
