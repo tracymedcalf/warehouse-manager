@@ -191,7 +191,7 @@ export default function Skus() {
     }
 
     if (mutation.isError) {
-        return <AutoAssignFailure />;
+        return <AutoAssignFailure error={mutation.failureReason?.message} />;
     }
 
     if (mutation.isSuccess) {
@@ -443,7 +443,7 @@ function IndeterminateCheckbox({
     )
 }
 
-function AutoAssignFailure({ error }: { error: string }) {
+function AutoAssignFailure({ error }: { error?: string }) {
     return (
         <div>
             <p>Failure when trying to auto-assign.</p>

@@ -1,1 +1,1 @@
-export const NO_PUTAWAY_TYPE = 0;
+export const NO_PUTAWAY_TYPE = "SKU has no putaway type";

@@ -9,18 +9,14 @@ function SkuComponent({ skuId, skuName }: { skuId: number; skuName: string; }) {
     );
 }
 
-const reasonMap = {
-    [NO_PUTAWAY_TYPE]: 'SKU has no putaway type',
-};
 
 function SkusCantAssignRow(
-    { id, name, reason }: { id: number; name: string; reason: number }
+    { id, name, reason }: { id: number; name: string; reason: string }
 ) {
-    const reasonText = reasonMap[reason];
     return (
         <tr>
             <td><SkuComponent skuId={id} skuName={name} /></td>
-            <td>{reasonText}</td>
+            <td>{reason}</td>
         </tr>
     );
 }
