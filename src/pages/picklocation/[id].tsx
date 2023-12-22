@@ -1,5 +1,5 @@
 import React from 'react';
-import { GetStaticProps } from "next";
+import type { GetStaticProps } from "next";
 import { createSsgHelpers } from "~/helpers/ssgHelper";
 import { FieldValues, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +17,7 @@ export default
     function SinglePagePickLocation(props: { pickLocationId: number }) {
     const { pickLocationId } = props;
 
-    const { data, isLoading, refetch } = api.pickLocation.getById.useQuery({ pickLocationId });
+    const { data, isLoading } = api.pickLocation.getById.useQuery({ pickLocationId });
 
     if (isLoading) return <div>Loading...</div>;
 

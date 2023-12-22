@@ -211,7 +211,7 @@ export default function Skus() {
                     />
                 </div>
                 <div className="h-2" />
-                <table>
+                <table className="styled-table">
                     <thead>
                         {table.getHeaderGroups().map(headerGroup => (
                             <tr key={headerGroup.id}>

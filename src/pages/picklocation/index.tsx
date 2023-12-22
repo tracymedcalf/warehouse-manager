@@ -102,8 +102,8 @@ export default function PickLocations() {
                 header: "Putaway Type",
             },
             {
-                accessorKey: 'sku',
-                cell: info => <SkuLink value={info.getValue()} />,
+                accessorFn: (row) => row.sku?.name ?? "None",
+                cell: info => <SkuLink value={info.row.original.sku} />,
                 header: "Assigned SKU",
             },
         ],
@@ -157,7 +157,7 @@ export default function PickLocations() {
                     />
                 </div>
                 <div className="h-2" />
-                <table>
+                <table className="styled-table">
                     <thead>
                         {table.getHeaderGroups().map(headerGroup => (
                             <tr key={headerGroup.id}>

@@ -6,17 +6,25 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { NO_PUTAWAY_TYPE } from "~/constants";
+import { NO_PICK_LOC, NO_PUTAWAY_TYPE } from "~/constants";
 import patchSchema from "~/schemas/sku";
 
 const putawayTypes = ['Bin', 'Liquid', 'Carton Flow', 'Select Rack'];
 
-type PickLocAssignment = { pickLocation: { id: number; name: string; }};
-
-const transformPickLocation = (assignment: PickLocAssignment | null) => {
-  return assignment == null ? undefined : {
-    id: assignment.pickLocation.id, name: assignment.pickLocation.name
+type PickLocAssignment = {
+  pickLocation: { 
+    id: number
+    name: string
+    putawayType: string
   }
+};
+
+const transformPickLocation = (assignment: PickLocAssignment) => {
+  return {
+    id: assignment.pickLocation.id, 
+    name: assignment.pickLocation.name,
+    putawayType: assignment.pickLocation.putawayType,
+  };
 }
 
 type SkuLocSubset = {
@@ -25,60 +33,65 @@ type SkuLocSubset = {
   name: string
 }
 
-function sortToBins(array: SkuLocSubset[]) {
-  const bins: Record<string, SkuLocSubset[]> = {};
-
-  for (const el of array) {
-    const { putawayType } = el;
-    const bin: SkuLocSubset[] | undefined = bins[putawayType];
-    if (bin != null) {
-      bin.push(el);
-    } else {
-      bins[putawayType] = [el];
-    }
-  }
-
-  return bins;
-}
-
-type NewAssignment = {
+export type NewAssignment = {
   pickLocationId: number
   pickLocationName: string
   skuId: number
   skuName: string
 }
 
-function assignBin(
-  assignments: NewAssignment[],
-  skuBin: SkuLocSubset[],
-  locBin: SkuLocSubset[]
-) {
-  for (const sku of skuBin) {
-    for (const loc of locBin) {
-      assignments.push({
-        pickLocationId: loc.id,
-        pickLocationName: loc.name,
-        skuId: sku.id,
-        skuName: sku.name,
-      })
-    }
-  }
+interface SkuSubset {
+  id: number
+  name: string
+  putawayType: string | null
 }
 
-function suggestAssignments(skus: SkuLocSubset[], locs: SkuLocSubset[]) {
-  const skuBins = sortToBins(skus);
-  const locBins = sortToBins(locs);
+interface SkuCantAssign {
+  id: number
+  name: string
+  reason: string
+}
+
+function suggestAssignments(
+  skus: SkuSubset[],
+  locs: SkuLocSubset[]
+): { assignments: NewAssignment[]; skusCantAssign: SkuCantAssign[] } {
+
+  const [skusWithPutawayTypes, skusWithout] = _.partition(
+    skus,
+    (s): s is SkuLocSubset => s.putawayType != null
+  );
+
+  const skusCantAssign = skusWithout.map((s) => {
+    const result = {...s, reason: NO_PUTAWAY_TYPE };
+    return result;
+  });
 
   const assignments: NewAssignment[] = [];
 
-  for (const [key, skuBin] of Object.entries(skuBins)) {
-    const locBin = locBins[key];
-    if (locBin != null) {
-      assignBin(assignments, skuBin, locBin)
-    } // else couldn't assign!
+  for (const s of skusWithPutawayTypes) {
+    let indexOfP = -1;
+    const p = locs.find((p, i): p is SkuLocSubset => {
+      indexOfP = i;
+      return p != null && p.putawayType === s.putawayType;
+    });
+
+    if (p == null) {
+      skusCantAssign.push({...s, reason: NO_PICK_LOC}); 
+      continue;
+    }
+
+    delete locs[indexOfP];
+
+    assignments.push({
+      skuId: s.id,
+      skuName: s.name,
+      pickLocationId: p.id,
+      pickLocationName: p.name,
+    });
   }
 
-  return assignments;
+  return { assignments, skusCantAssign };
 }
 
 export const skuRouter = createTRPCRouter({
@@ -172,24 +185,15 @@ export const skuRouter = createTRPCRouter({
         // `Prisma.StringFilter<PickLocation>` would seem to be the solution
       });
 
-      const [skusWithPutawayTypes, skusWithout] = _.partition(
-        skus,
-        (s): s is SkuLocSubset => s.putawayType != null
-      );
 
-      const skusCantAssign = skusWithout.map((s) => {
-        const result = {...s, reason: NO_PUTAWAY_TYPE };
-        return result;
-      });
+      const result = suggestAssignments(skus, locs);
 
-      const assignments = suggestAssignments(skusWithPutawayTypes, locs);
-
-      for (const a of assignments) {
+      for (const { pickLocationId, skuId } of result.assignments) {
         await ctx.db.assignment.create({
-          data: a
+          data: { pickLocationId, skuId }
         });
       }
 
-      return { assignments, skusCantAssign };
+      return result;
     }),
 });

@@ -1,7 +1,6 @@
 import type { inferRouterOutputs } from '@trpc/server';
 import Link from 'next/link';
-import type { skuRouter } from '~/server/api/routers/sku';
-import { NO_PUTAWAY_TYPE } from '~/constants';
+import type { NewAssignment, skuRouter } from '~/server/api/routers/sku';
 
 function SkuComponent({ skuId, skuName }: { skuId: number; skuName: string; }) {
     return (
@@ -25,22 +24,41 @@ type RouterOutput = inferRouterOutputs<typeof skuRouter>;
 
 type AutoAssignOutput = RouterOutput['autoAssign'];
 
+function AssignmentRow({ skuName, skuId, pickLocationId, pickLocationName }: NewAssignment) {
+    return (
+        <tr>
+            <td><SkuComponent skuName={skuName} skuId={skuId} /></td>
+            <td>{pickLocationName}</td>
+        </tr>
+    )
+}
+
 export default function AutoAssign({ data }: { data: AutoAssignOutput }) {
     const { assignments, skusCantAssign } = data;
     return (
         <div>
             <div>
-                {assignments.map(a => <SkuComponent skuId={a.skuId} skuName={a.skuName} />)}
+                <table>
+                    <thead>
+                        <th>SKU Name</th>
+                        <th>Pick Location</th>
+                    </thead>
+                    <tbody>
+                        {assignments.map(a => <AssignmentRow {...a} />)}
+                    </tbody>
+                </table>
             </div>
-            <table>
-                <thead>
-                    <th>SKU Name</th>
-                    <th>Reason</th>
-                </thead>
-                <tbody>
-                    {skusCantAssign.map(s => <SkusCantAssignRow {...s} />)}
-                </tbody>
-            </table>
+            <div>
+                <table>
+                    <thead>
+                        <th>SKU Name</th>
+                        <th>Reason</th>
+                    </thead>
+                    <tbody>
+                        {skusCantAssign.map(s => <SkusCantAssignRow {...s} />)}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
