@@ -25,6 +25,9 @@ import {
 } from '@tanstack/match-sorter-utils'
 import Layout from "~/components/layout";
 import { api } from "~/utils/api";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { pickLocationRouter } from "~/server/api/routers/pickLocation";
+import PickLocationLink from "~/components/pickLocationLink";
 
 declare module '@tanstack/table-core' {
     interface FilterFns {
@@ -71,8 +74,6 @@ const SkuLink = ({ value }: { value: { id: number; name: string; } }) => {
     )
 }
 
-type PickLocation = any;
-
 export default function PickLocations() {
     const { data, isLoading } = api.pickLocation.getAll.useQuery();
 
@@ -80,18 +81,19 @@ export default function PickLocations() {
         []
     )
     const [globalFilter, setGlobalFilter] = React.useState('')
+    
+    type PickLocationRouterOutput = inferRouterOutputs<typeof pickLocationRouter>['getAll'][0]
 
-    const columns = React.useMemo<ColumnDef<PickLocation, any>[]>(
+    const columns = React.useMemo<ColumnDef<PickLocationRouterOutput, any>[]>(
         () => [
             {
                 accessorKey: 'name',
                 cell: info => {
                     return (
-                        <Link
-                            href={`/picklocation/${info.row.original.id}`}
-                        >
-                            {info.getValue()}
-                        </Link>
+                        <PickLocationLink
+                            id={info.row.original.id}
+                            name={info.getValue()}
+                        />
                     );
                 },
                 header: "Name",
@@ -103,7 +105,14 @@ export default function PickLocations() {
             },
             {
                 accessorFn: (row) => row.sku?.name ?? "None",
-                cell: info => <SkuLink value={info.row.original.sku} />,
+                cell: info => {
+                    const { sku } = info.row.original;
+                    return (
+                        sku == null 
+                        ? "None"
+                        : <SkuLink value={sku} />
+                    );
+                },
                 header: "Assigned SKU",
             },
         ],

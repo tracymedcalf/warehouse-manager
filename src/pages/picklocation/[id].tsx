@@ -1,7 +1,7 @@
 import React from 'react';
 import type { GetStaticProps } from "next";
 import { createSsgHelpers } from "~/helpers/ssgHelper";
-import { FieldValues, useForm } from 'react-hook-form';
+import { type FieldValues, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from "~/utils/api";
 import schema from "~/schemas/pickLocation";

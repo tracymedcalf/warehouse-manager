@@ -1,12 +1,13 @@
-import type { Sku } from "@prisma/client";
 import Link from "next/link";
 import React, { HTMLProps } from 'react'
 import {
-    Column,
-    Table,
+    type Column,
+    type Table,
+    type ColumnFiltersState,
+    type FilterFn,
+    type SortingFn,
+    type ColumnDef,
     useReactTable,
-    ColumnFiltersState,
-    createColumnHelper,
     getCoreRowModel,
     getFilteredRowModel,
     getFacetedRowModel,
@@ -15,19 +16,19 @@ import {
     getPaginationRowModel,
     sortingFns,
     getSortedRowModel,
-    FilterFn,
-    SortingFn,
-    ColumnDef,
     flexRender,
 } from '@tanstack/react-table'
 import {
-    RankingInfo,
+    type RankingInfo,
     rankItem,
     compareItems,
 } from '@tanstack/match-sorter-utils'
+import type { inferRouterOutputs } from "@trpc/server";
 import { api } from "~/utils/api";
 import Layout from "~/components/layout";
 import AutoAssign from "~/components/autoAssign";
+import type { skuRouter } from "~/server/api/routers/sku";
+import SkuLink from "~/components/skuLink";
 
 declare module '@tanstack/table-core' {
     interface FilterFns {
@@ -76,7 +77,9 @@ export default function Skus() {
     )
     const [globalFilter, setGlobalFilter] = React.useState('')
 
-    const columns = React.useMemo<ColumnDef<Sku, any>[]>(
+    type SkuRouterOutput = inferRouterOutputs<typeof skuRouter>['getAll'][0]
+
+    const columns = React.useMemo<ColumnDef<SkuRouterOutput, any>[]>(
         () => [
             {
                 id: 'select',
@@ -106,11 +109,10 @@ export default function Skus() {
                 accessorKey: 'name',
                 cell: info => {
                     return (
-                        <Link
-                            href={`/sku/${info.row.original.id}`}
-                        >
-                            {info.getValue()}
-                        </Link>
+                        <SkuLink
+                            id={info.row.original.id}
+                            name={info.getValue()}
+                        />
                     );
                 },
                 header: "Name",

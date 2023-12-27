@@ -1,20 +1,13 @@
 import type { inferRouterOutputs } from '@trpc/server';
-import Link from 'next/link';
 import type { NewAssignment, skuRouter } from '~/server/api/routers/sku';
-
-function SkuComponent({ skuId, skuName }: { skuId: number; skuName: string; }) {
-    return (
-        <Link href={'/sku/' + skuId}>{skuName}</Link>
-    );
-}
-
+import SkuLink from './skuLink';
 
 function SkusCantAssignRow(
     { id, name, reason }: { id: number; name: string; reason: string }
 ) {
     return (
         <tr>
-            <td><SkuComponent skuId={id} skuName={name} /></td>
+            <td><SkuLink id={id} name={name} /></td>
             <td>{reason}</td>
         </tr>
     );
@@ -27,7 +20,7 @@ type AutoAssignOutput = RouterOutput['autoAssign'];
 function AssignmentRow({ skuName, skuId, pickLocationId, pickLocationName }: NewAssignment) {
     return (
         <tr>
-            <td><SkuComponent skuName={skuName} skuId={skuId} /></td>
+            <td><SkuLink id={skuId} name={skuName} /></td>
             <td>{pickLocationName}</td>
         </tr>
     )
