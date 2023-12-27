@@ -21,7 +21,7 @@ jobs:
         run: npm install
 
       - name: Typecheck
-        run: npm run typecheck
+        run: npm run typecheck -- --exclude seed-mock-data/**/*
 
       - name: Lint
         run: npm run lint

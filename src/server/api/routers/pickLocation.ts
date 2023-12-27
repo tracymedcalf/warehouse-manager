@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 import {
   createTRPCRouter,
@@ -16,6 +17,10 @@ const transformSku = (assignment: Assignment | null) => {
 }
 
 const putawayTypes = ['Bin', 'Liquid', 'Carton Flow', 'Select Rack'];
+
+type PickLocationWithIncludes = Prisma.PickLocationGetPayload<
+{ include: { assignment: { include: { sku: true }}}}
+>;
 
 export const pickLocationRouter = createTRPCRouter({
   patch: protectedProcedure
@@ -73,7 +78,7 @@ export const pickLocationRouter = createTRPCRouter({
           },
           take: 1000
         })
-      ).map(row => {
+      ).map((row: PickLocationWithIncludes) => {
         const { id, name, putawayType, assignment } = row;
         return {
           id,

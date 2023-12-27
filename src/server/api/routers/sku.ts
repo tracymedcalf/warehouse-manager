@@ -1,5 +1,6 @@
 import _ from "lodash";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 import {
   createTRPCRouter,
@@ -10,6 +11,8 @@ import { NO_PICK_LOC, NO_PUTAWAY_TYPE } from "~/constants";
 import patchSchema from "~/schemas/sku";
 
 const putawayTypes = ['Bin', 'Liquid', 'Carton Flow', 'Select Rack'];
+
+type SkuWithAssignment = Prisma.SkuGetPayload<{ include: { assignment: true }}>
 
 type PickLocAssignment = {
   pickLocation: { 
@@ -150,7 +153,7 @@ export const skuRouter = createTRPCRouter({
           },
           take: 1000
         })
-      ).map(row => {
+      ).map((row: SkuWithAssignment) => {
         const { id, name, putawayType, assignment } = row;
         return {
           id,
