@@ -21,7 +21,7 @@ jobs:
         run: npm install
 
       - name: Generate Prisma Types
-        run: npx prisma generate
+        run: npm postinstall
 
       - name: Typecheck
         run: npm run typecheck -- -p typecheck-tsconfig.json
