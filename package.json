@@ -11,7 +11,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "dev": "next dev",
-    "postinstall": "prisma generate --schema/prod-schema.prisma",
+    "postinstall": "prisma generate --schema prisma/prod-schema.prisma",
     "lint": "next lint",
     "start": "next start",
     "typecheck": "tsc --noEmit"
