@@ -27,12 +27,11 @@ model Sku {
   name        String       @db.VarChar(10)
   description String
   maxType     String
-  putawayType String?      @db.VarChar(3)
+  putawayType String?
   width       Float
   length      Float
   height      Float
   weight      Float
-  onHand      Int
   price       Decimal      @db.Decimal(15, 2)
   assignment  Assignment[]
   Inventory   Inventory[]
@@ -53,8 +52,8 @@ model Inventory {
 model PickLocation {
   id          Int         @id @default(autoincrement())
   barcode     String      @db.VarChar(6)
-  name        String      @db.VarChar(16)
-  putawayType String      @db.VarChar(3)
+  name        String      @db.VarChar(15)
+  putawayType String
   width       Float
   length      Float
   height      Float
