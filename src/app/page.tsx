@@ -1,4 +1,5 @@
 import Link from "next/link";
+import "~/styles/globals.css";
 
 import { getServerAuthSession } from "~/server/auth";
 
@@ -12,10 +13,20 @@ export default async function Home() {
           Warehouse Management
         </h1>
         <div>
-          <Link href="/picklocation">Pick Locations</Link>
+          <Link
+            href="/picklocation"
+            className="text-white bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:ring-gray-300 font-large rounded-lg text-lg px-5 py-2.5 dark:bg-gray-600 dark:hover:bg-gray-700 focus:outline-none dark:focus:ring-gray-800"
+          >
+            Pick Locations
+          </Link>
         </div>
         <div>
-          <Link href="/sku">SKUs</Link>
+          <Link
+            className="text-white bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-lg px-5 py-2.5 dark:bg-gray-600 dark:hover:bg-gray-700 focus:outline-none dark:focus:ring-gray-800"
+            href="/sku"
+          >
+            SKUs
+          </Link>
         </div>
         <div className="flex flex-col items-center gap-2">
           <div className="flex flex-col items-center justify-center gap-4">
@@ -24,7 +35,7 @@ export default async function Home() {
             </p>
             <Link
               href={session ? "/api/auth/signout" : "/api/auth/signin"}
-              className="rounded-full bg-white/10 px-10 py-3 font-semibold no-underline transition hover:bg-white/20"
+              className="text-white bg-gray-700 hover:bg-gray-800 focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-lg px-5 py-2.5 dark:bg-gray-600 dark:hover:bg-gray-700 focus:outline-none dark:focus:ring-gray-800"
             >
               {session ? "Sign out" : "Sign in"}
             </Link>

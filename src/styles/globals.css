@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+    @apply bg-black text-slate-100;
+}
+
 .styled-table {
     border-collapse: collapse;
     margin: 25px 0;
