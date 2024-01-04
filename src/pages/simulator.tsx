@@ -1,96 +1,73 @@
 import { useRef, useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 
-class Entity {
-    element: HTMLDivElement;
-    constructor() {
-        this.element = document.createElement("div");
-    }
+
+type Point = {
+    id: string
+    x: number
+    y: number
 }
 
-class Racking extends Entity {
-
-    constructor() {
-        super();
-        this.element.setAttribute(
-            "style",
-            "background-color: orange; width: 20px; height: 20px;"
-        );
-    }
+type Hotspot = Point & {
+    type: "hotspot"
 }
 
-class Hotspot extends Entity {
-
-    constructor() {
-        super();
-        this.element.setAttribute(
-            "style",
-            "background-color: orange;"
-        );
-    }
+type Mod = Point & {
+    type: "mod"
 }
+
+type Racking = Point & {
+    type: "racking"
+}
+
+type Entity = Hotspot | Racking | Mod
 
 export default function Simulator() {
 
-    const divRef = useRef<HTMLDivElement>(null);
+    const [entities, setEntities] = useState<Entity[]>([
+        { id: uuidv4(), x: 1, y: 1, type: "racking" },
+    ]);
 
-    const [state, setState] = useState<Entity[]>([]);
+    const [selected, setSelected] = useState<Entity | null>(null);
 
-    const buttonHandler = () => {
-        setState([...state, new Racking()]);
+    const handleNewRacking = () => {
+        setSelected({
+            id: uuidv4(),
+            type: "racking",
+            x: 0,
+            y: 0,
+        }); 
     };
 
-    useEffect(() => {
-        const div = divRef.current;
-        if (div == null) throw "DIV ref is null";
+    const handleClick = (ev: React.MouseEvent) => {
 
-        // Make the DIV element draggable:
-        for (const child of div.children) {
+        if (selected == null) return;
 
-            if (child.nodeName?.toLowerCase() === "div") {
-                dragElement(child as HTMLDivElement);
-            }
-        }
-
-        function dragElement(elmnt: HTMLDivElement) {
-            var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            elmnt.onmousedown = dragMouseDown;
-
-            function dragMouseDown(e: MouseEvent) {
-                e.preventDefault();
-                // get the mouse cursor position at startup:
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                // call a function whenever the cursor moves:
-                document.onmousemove = elementDrag;
-            }
-
-            function elementDrag(e: MouseEvent) {
-                e.preventDefault();
-                // calculate the new cursor position:
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                // set the element's new position:
-                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-            }
-
-            function closeDragElement() {
-                // stop moving when mouse button is released:
-                document.onmouseup = null;
-                document.onmousemove = null;
-            }
-        }
-    }, [state]);
+        setSelected(null);
+    };
 
     return (
         <div>
-            <div ref={divRef} className="bg-gray-400 w-screen h-screen">
+            <div
+                onClick={handleClick}
+                className="bg-gray-400 w-screen h-screen"
+            >
+
+                {entities.map(({ id, x, y }) => {
+                    const style = { top: x + "px", left: y + "px" };
+                    return (
+                        <div
+                            key={id}
+                            className="bg-orange-500 w-10 h-10"
+                            style={style}
+                        >
+
+                        </div>
+                    );
+                })}
 
             </div>
-            <button onClick={buttonHandler}>Create Entity</button>
+            <button onClick={handleNewRacking}>New Racking</button>
         </div>
     );
 }
