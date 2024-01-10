@@ -6,8 +6,11 @@ export default function NavBar() {
             <div className="text-xl inline px-2 border-r">
                 <Link href="/sku">SKUs</Link>
             </div>
-            <div className="text-xl inline px-2">
+            <div className="text-xl inline px-2 border-r">
                 <Link href="/picklocation">Pick Locations</Link>
+            </div>
+            <div className="text-xl inline px-2">
+                <Link href="/simulator">Simulator</Link>
             </div>
         </div>
     )

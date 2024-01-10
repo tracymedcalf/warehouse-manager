@@ -43,6 +43,7 @@ export default class SeedData {
                 height: 4,
                 weight: 1,
                 price: new Decimal(2.5),
+                hits: 0.5,
             },
             {
                 name: "1002",
@@ -54,6 +55,7 @@ export default class SeedData {
                 height: 1,
                 weight: 0.5,
                 price: new Decimal(2.5),
+                hits: 0.5,
             },
             {
                 name: "1003",
@@ -65,6 +67,7 @@ export default class SeedData {
                 height: 1,
                 weight: 0.2,
                 price: new Decimal(2.5),
+                hits: 0.5,
             },
             {
                 name: "1004",
@@ -76,6 +79,7 @@ export default class SeedData {
                 height: 0.2,
                 weight: 0.1,
                 price: new Decimal(2.5),
+                hits: 0.5,
             },
             {
                 name: "1005",
@@ -87,6 +91,7 @@ export default class SeedData {
                 height: 4,
                 weight: 5,
                 price: new Decimal(2.5),
+                hits: 1,
             },
             {
                 name: "1006",
@@ -98,6 +103,7 @@ export default class SeedData {
                 height: 10,
                 weight: 15,
                 price: new Decimal(2.5),
+                hits: 1,
             },
             {
                 name: "1007",
@@ -109,6 +115,7 @@ export default class SeedData {
                 height: 5,
                 weight: 2,
                 price: new Decimal(2.5),
+                hits: 1,
             },
             {
                 name: "1008",
@@ -120,6 +127,7 @@ export default class SeedData {
                 height: 2.2,
                 weight: 0.6,
                 price: new Decimal(2.5),
+                hits: 0.5,
             },
         ];
 
@@ -161,6 +169,9 @@ export default class SeedData {
                 height: 1,
                 weight: 1,
                 price: new Decimal(2.5),
+
+                // randomly generate a number between 1 and 5
+                hits: Math.trunc(100 * Math.random() ** 3) / 10
             });
             putawayTypesIndex++;
             textIndex++;

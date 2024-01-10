@@ -35,6 +35,7 @@ model Sku {
   price       Decimal      @db.Decimal(15, 2)
   assignment  Assignment[]
   Inventory   Inventory[]
+  hits        Float
 }
 
 model Inventory {

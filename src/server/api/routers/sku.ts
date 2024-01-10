@@ -98,6 +98,17 @@ function suggestAssignments(
 }
 
 export const skuRouter = createTRPCRouter({
+
+  orderedByHits: publicProcedure
+  .query(({ ctx }) => {
+    return ctx.db.sku.findMany({
+      select: { id: true, name: true, hits: true },
+      // where sku has no assigned pick locations
+      where: { assignment: { none: {} } },
+      orderBy: { hits: "desc" },
+    });
+  }),
+
   patch: protectedProcedure
     .input(z.object({ id: z.number().int(), data: patchSchema }))
     .mutation(async ({ ctx, input: { id, data } }) => {
@@ -183,9 +194,6 @@ export const skuRouter = createTRPCRouter({
       const locs = await ctx.db.pickLocation.findMany({
         select: { id: true, name: true, putawayType: true },
         where: { assignment: null }
-        // where putawayType in skus.map(s => putawayType)
-        // have to figure out how Prisma does `in`
-        // `Prisma.StringFilter<PickLocation>` would seem to be the solution
       });
 
 
