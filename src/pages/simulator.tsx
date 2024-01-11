@@ -19,7 +19,8 @@ type Hotspot = PointWId & {
 }
 
 type Mod = PointWId & {
-    sku?: inferRouterOutputs<typeof skuRouter>["orderedByHits"][0]
+    capacity: number
+    skus: inferRouterOutputs<typeof skuRouter>["orderedByHits"]
     type: "mod"
 }
 
@@ -47,7 +48,7 @@ export default function Simulator() {
 
     const [selected, setSelected] = useState<Entity | null>(null);
 
-    const handleNew = (type: Entity["type"]) => {
+    const handleNew = (type: "hotspot" | "racking") => {
         setSelected({
             id: uuidv4(),
             type,
@@ -55,6 +56,17 @@ export default function Simulator() {
             y: 0,
         });
     };
+
+    const handleNewMod = () => {
+        setSelected({
+            id: uuidv4(),
+            type: "mod",
+            skus: [],
+            capacity: 5,
+            x: 0,
+            y: 0,
+        });
+    }
 
     const handleClick = (x: number, y: number) => {
 
@@ -77,7 +89,7 @@ export default function Simulator() {
         // find the first pick location that's closest to a hotspot and empty
         const hotspots = entities.filter(e => e.type === "hotspot");
         const emptyPickLocations = entities
-            .filter(e => e.type === "mod" && e.sku == null);
+            .filter(e => e.type === "mod" && e.skus.length === e.capacity);
        
         let id: Entity["id"] | undefined;
         let currentLeastDistance = Infinity;
@@ -85,11 +97,11 @@ export default function Simulator() {
         for (const h of hotspots) {
             for (const e of emptyPickLocations) {
 
-                const d = manhattanDistance(h, e);
+                const distance = manhattanDistance(h, e);
 
-                if (d < currentLeastDistance) {
+                if (distance < currentLeastDistance) {
                     id = e.id;
-                    currentLeastDistance = d;
+                    currentLeastDistance = distance;
                 }
             }
         }
@@ -105,14 +117,7 @@ export default function Simulator() {
         setState(state?.splice(1));
 
         setEntities(entities.map(e => {
-            if (e.id === id) {
-                return {
-                    ...e,
-                    sku: first,
-                };
-            }
-
-            return e;
+            return (e.id === id) ? {...e, sku: first } : e;
         }));
     };
 
@@ -120,17 +125,17 @@ export default function Simulator() {
 
         const a = [];
 
-        const classMap = {
-            mod: "w-10 h-10 bg-orange-500",
-            racking: "w-10 h-10 bg-orange-900",
-            hotspot: "w-5 h-5 m-2.5 rounded-full bg-red-500",
-        };
-
         for (let i = 0; i < 25; i++) {
 
             const entity = entities.find(e => {
                 return e.x === i && e.y === row
             });
+
+            const classMap = {
+                mod: "max-w-full max-h-full w-full h-full m-0 bg-orange-500 box-border",
+                racking: "w-full h-full m-0 bg-orange-900 box-border",
+                hotspot: "w-5 h-5 m-2.5 rounded-full bg-red-500",
+            };
 
             const myClass = entity == null ?
                 null :
@@ -145,8 +150,11 @@ export default function Simulator() {
                     {myClass == null ?
                         null :
                         <div
-                            className={myClass + "m-0"}
+                            className={myClass}
                         >
+                            {entity?.type === "mod" ? 
+                            `${entity.skus.length}/5` : 
+                            null}
                         </div>
                     }
                 </div>
@@ -197,7 +205,7 @@ export default function Simulator() {
                         </tbody>
                     </table>
                 </div>
-            T</div>
+            </div>
             <div className="flex gap-3">
                 <button
                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
@@ -212,7 +220,7 @@ export default function Simulator() {
                 </button>
                 <button
                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                    onClick={() => handleNew("mod")}
+                    onClick={handleNewMod}
                 >
                     Add Mod
                 </button>
