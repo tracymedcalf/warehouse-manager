@@ -1,37 +1,71 @@
 import { useRef, useEffect, useState } from "react";
 import { toast, Toaster } from "react-hot-toast";
-import { v4 as uuidv4 } from "uuid";
 import { api } from "~/utils/api";
 import type { skuRouter } from "~/server/api/routers/sku";
 import type { inferRouterOutputs } from "@trpc/server";
+import { useImmer } from "use-immer";
 
-type Point = {
-    x: number
-    y: number
-}
-
-type PointWId = Point & {
-    id: string
-}
-
-type Hotspot = PointWId & {
+type Hotspot = {
     type: "hotspot"
 }
 
-type Mod = PointWId & {
+type Mod = {
     capacity: number
     skus: inferRouterOutputs<typeof skuRouter>["orderedByHits"]
     type: "mod"
 }
 
-type Racking = PointWId & {
+type Racking = {
     type: "racking"
 }
 
 type Entity = Hotspot | Racking | Mod
 
-function manhattanDistance(p1: Point, p2: Point) {
-    return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
+function Mod(): Mod {
+    return {
+        type: "mod",
+        skus: [],
+        capacity: 5,
+    };
+}
+
+function gridForEach<T>(grid: T[][], f: (x: number, y: number, cell: T) => void) {
+
+    for (let y = 0; y < grid.length; y++) {
+        for (let x = 0; x < grid[y].length; x++) {
+            f(x, y, grid[y][x]);
+        }
+    }
+}
+
+function manhattanDistance(x1: number, y1: number, x2: number, y2: number) {
+    return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+}
+
+function createGridArray(): (null | Entity)[][] {
+
+    return [
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, Mod(), { type: "hotspot" }, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
+    ];
 }
 
 export default function Simulator() {
@@ -44,27 +78,19 @@ export default function Simulator() {
         },
     });
 
-    const [entities, setEntities] = useState<Entity[]>([]);
-
     const [selected, setSelected] = useState<Entity | null>(null);
 
+    const [gridState, setGridState] = useImmer(createGridArray());
+
     const handleNew = (type: "hotspot" | "racking") => {
-        setSelected({
-            id: uuidv4(),
-            type,
-            x: 0,
-            y: 0,
-        });
+        setSelected({ type });
     };
 
     const handleNewMod = () => {
         setSelected({
-            id: uuidv4(),
             type: "mod",
             skus: [],
             capacity: 5,
-            x: 0,
-            y: 0,
         });
     }
 
@@ -72,117 +98,98 @@ export default function Simulator() {
 
         if (selected == null) return;
 
-        setEntities([...entities, { ...selected, x, y }]);
+        setGridState(draft => {
+            draft[y][x] = selected;
+        });
+
         setSelected(null);
     };
 
     const handleClearAll = () => {
-        setEntities([]);
+        setGridState(draft => {
+            for (let i = 0; i < draft.length; i++) {
+                for (let j = 0; j < draft[i].length; j++) {
+                    draft[i][j] = null;
+                }
+            }
+        });
     };
 
     const handleAutoAssign = () => {
+        if (state == null) return;
 
-        const first = state?.[0];
+        const hotspots: [number, number][] = [];
 
-        if (first == null) return;
-
-        // find the first pick location that's closest to a hotspot and empty
-        const hotspots = entities.filter(e => e.type === "hotspot");
-        const emptyPickLocations = entities
-            .filter(e => e.type === "mod" && e.skus.length === e.capacity);
-       
-        let id: Entity["id"] | undefined;
-        let currentLeastDistance = Infinity;
-
-        for (const h of hotspots) {
-            for (const e of emptyPickLocations) {
-
-                const distance = manhattanDistance(h, e);
-
-                if (distance < currentLeastDistance) {
-                    id = e.id;
-                    currentLeastDistance = distance;
-                }
+        gridForEach(gridState, (x, y, cell) => {
+            if (cell?.type === "hotspot") {
+                hotspots.push([x, y]);
             }
-        }
+        });
 
-        if (id == null) {
-            toast(
-                `There are either no hotspots or open pick locations.
-            (Did you place at least one of both?)`
-            );
-            return;
-        }
+        setGridState(draft => {
+            let minDistance = Infinity;
+            let chosen: undefined | Mod;
 
-        setState(state?.splice(1));
+            gridForEach(draft, (x1, y1, cell) => {
 
-        setEntities(entities.map(e => {
-            return (e.id === id) ? {...e, sku: first } : e;
-        }));
-    };
+                if (cell?.type !== "mod") return;
+                if (cell.skus.length >= cell.capacity) return;
 
-    const Row = ({ row }: { row: number }) => {
+                for (const [x2, y2] of hotspots) {
+                    
+                    const distance = manhattanDistance(x1, y1, x2, y2);
 
-        const a = [];
-
-        for (let i = 0; i < 25; i++) {
-
-            const entity = entities.find(e => {
-                return e.x === i && e.y === row
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        chosen = cell;
+                    }
+                }
             });
 
-            const classMap = {
-                mod: "max-w-full max-h-full w-full h-full m-0 bg-orange-500 box-border",
-                racking: "w-full h-full m-0 bg-orange-900 box-border",
-                hotspot: "w-5 h-5 m-2.5 rounded-full bg-red-500",
-            };
-
-            const myClass = entity == null ?
-                null :
-                classMap[entity.type] + " ";
-
-            a.push(
-                <div
-                    className="w-10 h-10 border inline-block m-0 border-white-900"
-                    onClick={() => handleClick(i, row)}
-                    key={"" + i}
-                >
-                    {myClass == null ?
-                        null :
-                        <div
-                            className={myClass}
-                        >
-                            {entity?.type === "mod" ? 
-                            `${entity.skus.length}/5` : 
-                            null}
-                        </div>
-                    }
-                </div>
-            );
-        }
-        return a;
+            const [first, ...rest] = state;
+            chosen?.skus.push(first);
+            setState(rest);
+        });
     };
 
     const Grid = () => {
-        const a = [];
-        for (let i = 0; i < 10; i++) {
-            a.push(
-                <div
-                    className="-mt-8px m-0 p-0"
-                    key={"" + i}
-                >
-                    <Row row={i} />
-                </div>
-            );
+        const array = [];
+        
+        // I always see row-major being used in computing, so that's what
+        // we're gonna use
+        for (let y = 0; y < gridState.length; y++) {
+            for (let x = 0; x < gridState[y].length; x++) {
+
+                const entity = gridState[y][x];
+
+                array.push(
+                    <div
+                        className="absolute bg-gray-900 border border-gray-300 m-0 w-10 h-10"
+                        style={{
+                            left: `${x * 2.5}rem`,
+                            top: `${y * 2.5}rem`,
+                        }}
+                        onClick={() => handleClick(x, y)}
+                    >
+                        {entity != null ?
+                            <EntityComponent entity={entity} /> :
+                            null}
+                    </div>
+                );
+            }
         }
-        return a;
+
+        return array;
     };
 
     return (
         <div>
             <Toaster />
             <div className="flex gap-3 h-100 m-3">
-                <div className="bg-scroll flex-shrink overflow-auto whitespace-nowrap" style={{ paddingTop: "8px" }}>
+                <div
+                    className="bg-scroll flex-grow flex-shrink overflow-scroll relative whitespace-nowrap"
+                    style={{ minWidth: "80%" }}
+                >
                     <Grid />
                 </div>
                 <div className="bg-scroll overflow-y-auto">
@@ -240,4 +247,21 @@ export default function Simulator() {
             </div>
         </div>
     );
+}
+
+function EntityComponent({ entity }: { entity: Entity }) {
+    switch (entity.type) {
+        case "mod":
+            return (
+                <div className="bg-orange-500 h-full w-full text-center">
+                    {`${entity.skus.length}/${entity.capacity}`}
+                </div>
+            );
+        case "racking":
+            return <div className="bg-orange-900 h-full w-full"></div>
+        case "hotspot":
+            return (
+                <div className="w-5 h-5 m-2.5 rounded-full bg-red-500"></div>
+            );
+    }
 }
