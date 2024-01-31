@@ -63,6 +63,16 @@ model PickLocation {
   zone        String
   assignment  Assignment?
   Inventory   Inventory[]
+  x           Float?
+  y           Float?
+}
+
+model Hotspot {
+  id          Int    @id @default(autoincrement())
+  type        String
+  x           Float
+  y           Float
+  putawayType String
 }
 
 // Necessary for Next auth

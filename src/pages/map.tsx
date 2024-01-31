@@ -68,7 +68,7 @@ function createGridArray(): (null | Entity)[][] {
     ];
 }
 
-export default function Simulator() {
+export default function Map() {
 
     const [state, setState] = useState<typeof data>();
 
