@@ -1,6 +1,7 @@
 import _ from "lodash";
 
 import { NO_PICK_LOC, NO_PUTAWAY_TYPE } from "~/constants";
+import manhattanDistance from "./manhattanDistance";
 
 type NewAssignment = {
     pickLocationId: number
@@ -126,8 +127,4 @@ function createWithDistances(
 
         return {...loc, distance: minDistance };
     });
-}
-
-function manhattanDistance(x1: number, y1: number, x2: number, y2: number) {
-    return Math.abs(x1 - x2) + Math.abs(y1 - y2);
 }

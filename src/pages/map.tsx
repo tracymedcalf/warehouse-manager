@@ -1,72 +1,17 @@
 import { useRef, useEffect, useState } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import { api } from "~/utils/api";
-import type { skuRouter } from "~/server/api/routers/sku";
+import NavBar from "~/components/navbar";
 import type { inferRouterOutputs } from "@trpc/server";
+import type { pickLocationRouter } from "~/server/api/routers/pickLocation";
+import type { physicalLocationRouter } from "~/server/api/routers/physicalLocation";
 import { useImmer } from "use-immer";
+import * as THREE from "three";
+import { MapControls } from "three/addons/controls/MapControls.js";
 
-type Hotspot = {
-    type: "hotspot"
-}
+type PhysicalLocation = Omit<inferRouterOutputs<typeof physicalLocationRouter>['getAll'][0], 'id'>;
+type PickLocationsWithoutPhysical = inferRouterOutputs<typeof pickLocationRouter>['getAllWithoutPhysical'];
 
-type Mod = {
-    capacity: number
-    skus: inferRouterOutputs<typeof skuRouter>["orderedByHits"]
-    type: "mod"
-}
-
-type Racking = {
-    type: "racking"
-}
-
-type Entity = Hotspot | Racking | Mod
-
-function Mod(): Mod {
-    return {
-        type: "mod",
-        skus: [],
-        capacity: 5,
-    };
-}
-
-function gridForEach<T>(grid: T[][], f: (x: number, y: number, cell: T) => void) {
-
-    for (let y = 0; y < grid.length; y++) {
-        for (let x = 0; x < grid[y].length; x++) {
-            f(x, y, grid[y][x]);
-        }
-    }
-}
-
-function manhattanDistance(x1: number, y1: number, x2: number, y2: number) {
-    return Math.abs(x1 - x2) + Math.abs(y1 - y2);
-}
-
-function createGridArray(): (null | Entity)[][] {
-
-    return [
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, Mod(), { type: "hotspot" }, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]
-    ];
-}
 
 export default function Map() {
 
@@ -78,90 +23,83 @@ export default function Map() {
         },
     });
 
-    const [selected, setSelected] = useState<Entity | null>(null);
+    const mutation = api.sku.autoAssign.useMutation();
+    
+    const [gridState, setGridState] = useImmer<PhysicalLocation[]>([]);
 
-    const [gridState, setGridState] = useImmer(createGridArray());
+    const physicalLocationQueryResult = api.physicalLocation.getAll.useQuery(undefined, {
+        onSuccess: (data) => {
+            setGridState(data);
+        }
+    });
 
-    const handleNew = (type: "hotspot" | "racking") => {
-        setSelected({ type });
+    const gridData = physicalLocationQueryResult.data;
+    const gridIsLoading = physicalLocationQueryResult.isLoading;
+
+    const [selected, setSelected] = useState<PhysicalLocation['type'] | null>(null);
+
+    const [pickLocationState, setPickLocationState]
+        = useState<PickLocationsWithoutPhysical>([]);
+
+    const pickLocationQueryResult = api.pickLocation.getAllWithoutPhysical.useQuery(undefined, {
+        onSuccess: (data) => {
+            setPickLocationState(data);
+        }
+    });
+
+    const handleNew = (type: PhysicalLocation['type']) => {
+        setSelected(type);
     };
-
-    const handleNewMod = () => {
-        setSelected({
-            type: "mod",
-            skus: [],
-            capacity: 5,
-        });
-    }
 
     const handleClick = (x: number, y: number) => {
 
         if (selected == null) return;
 
+        // need to place the `selected` on the map
         setGridState(draft => {
-            draft[y][x] = selected;
+            draft?.push({
+                x,
+                y,
+                type: selected,
+                PickLocation: [],
+                putawayType: null,
+            });
         });
 
         setSelected(null);
     };
 
     const handleClearAll = () => {
-        setGridState(draft => {
-            for (let i = 0; i < draft.length; i++) {
-                for (let j = 0; j < draft[i].length; j++) {
-                    draft[i][j] = null;
-                }
-            }
-        });
+        setGridState([]);
     };
 
     const handleAutoAssign = () => {
-        if (state == null) return;
+        if (state == null || state.length === 0) {
+            return;
+        }
+        mutation.mutate([state[0].id]);
+        setState(state.slice(1));
+    };
 
-        const hotspots: [number, number][] = [];
+    const physicalLocationMutation = api.physicalLocation.post.useMutation();
 
-        gridForEach(gridState, (x, y, cell) => {
-            if (cell?.type === "hotspot") {
-                hotspots.push([x, y]);
-            }
-        });
+    const handleSave = () => {
 
-        setGridState(draft => {
-            let minDistance = Infinity;
-            let chosen: undefined | Mod;
-
-            gridForEach(draft, (x1, y1, cell) => {
-
-                if (cell?.type !== "mod") return;
-                if (cell.skus.length >= cell.capacity) return;
-
-                for (const [x2, y2] of hotspots) {
-                    
-                    const distance = manhattanDistance(x1, y1, x2, y2);
-
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        chosen = cell;
-                    }
-                }
-            });
-
-            const [first, ...rest] = state;
-            chosen?.skus.push(first);
-            setState(rest);
-        });
+        if (gridState == null) return;
+        console.log(gridState);
+        physicalLocationMutation.mutate(gridState);
     };
 
     const Grid = () => {
+
+        if (gridIsLoading) {
+            return <div>Loading...</div>
+        }
+
         const array = [];
-        
-        // I always see row-major being used in computing, so that's what
-        // we're gonna use
-        for (let y = 0; y < gridState.length; y++) {
-            for (let x = 0; x < gridState[y].length; x++) {
 
-                const entity = gridState[y][x];
-
+        for (let y = 0; y < 10; y++) {
+            for (let x = 0; x < 25; x++) {
                 array.push(
                     <div
                         className="absolute bg-gray-900 border border-gray-300 m-0 w-10 h-10"
@@ -171,19 +109,19 @@ export default function Map() {
                         }}
                         onClick={() => handleClick(x, y)}
                     >
-                        {entity != null ?
-                            <EntityComponent entity={entity} /> :
-                            null}
                     </div>
                 );
             }
         }
 
         return array;
+
     };
 
     return (
         <div>
+            <Threed />
+            <NavBar />
             <Toaster />
             <div className="flex gap-3 h-100 m-3">
                 <div
@@ -191,6 +129,9 @@ export default function Map() {
                     style={{ minWidth: "80%" }}
                 >
                     <Grid />
+                    {gridState?.map(entity =>
+                        <EntityComponent entity={entity} />)
+                    }
                 </div>
                 <div className="bg-scroll overflow-y-auto">
                     <table className="mr-1">
@@ -227,7 +168,7 @@ export default function Map() {
                 </button>
                 <button
                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                    onClick={handleNewMod}
+                    onClick={() => handleNew("mod")}
                 >
                     Add Mod
                 </button>
@@ -244,17 +185,58 @@ export default function Map() {
                 >
                     Auto-Assign
                 </button>
+                <button
+                    onClick={handleSave}
+                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                >
+                    Save
+                </button>
+            </div>
+            <div
+                className="bg-scroll overflow-y-auto inline-block"
+                style={{ height: "10rem" }}
+            >
+                <table className="mr-1">
+                    <thead>
+                        <tr>
+                            <th className="text-left">Name</th>
+                            <th className="ml-4 text-left w-8">Putaway Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {pickLocationState.map(p => {
+                            return (
+                                <tr key={"" + p.id}>
+                                    <td>{p.name}</td>
+                                    <td>{p.putawayType}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
 }
 
-function EntityComponent({ entity }: { entity: Entity }) {
+function EntityComponent({ entity }: { entity: PhysicalLocation }) {
     switch (entity.type) {
         case "mod":
+
+            const numFilledPickLocations = entity
+                .PickLocation
+                .filter(p => p.Inventory.length > 0)
+                .length;
+
             return (
-                <div className="bg-orange-500 h-full w-full text-center">
-                    {`${entity.skus.length}/${entity.capacity}`}
+                <div
+                    className="absolute bg-orange-500 m-0 w-10 h-10"
+                    style={{
+                        left: `${entity.x * 2.5}rem`,
+                        top: `${entity.y * 2.5}rem`
+                    }}
+                >
+                    {`${numFilledPickLocations}/5`}
                 </div>
             );
         case "racking":
@@ -264,4 +246,108 @@ function EntityComponent({ entity }: { entity: Entity }) {
                 <div className="w-5 h-5 m-2.5 rounded-full bg-red-500"></div>
             );
     }
+}
+
+function Threed() {
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+
+        if (ref.current == null) {
+            return;
+        }
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xcccccc);
+        scene.fog = new THREE.FogExp2(0xcccccc, 0.002);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        ref.current.appendChild(renderer.domElement);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+        camera.position.set(0, 200, - 400);
+
+        // controls
+
+        const controls = new MapControls(camera, renderer.domElement);
+
+        //controls.addEventListener('change', render); // call this only in static scenes (i.e., if there is no animation loop)
+
+        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+        controls.dampingFactor = 0.05;
+
+        controls.screenSpacePanning = false;
+
+        controls.minDistance = 100;
+        controls.maxDistance = 500;
+
+        controls.maxPolarAngle = Math.PI / 2;
+
+        // world
+
+        const geometry = new THREE.BoxGeometry(48, 1, 24);
+        const material = new THREE.MeshPhongMaterial({ color: 0xeeeeee, flatShading: true });
+
+        const wallGeometry = new THREE.BoxGeometry(1, 8 * 9, 24);
+
+        const WALL_Y = 9 * 8 * .5;
+
+        for (let i = 0; i < 500; i ++) {
+            const group = new THREE.Group();
+            const rightWallMesh = new THREE.Mesh(wallGeometry, material);
+            rightWallMesh.position.set(-24, WALL_Y, 0);
+            group.add(rightWallMesh);
+            
+            const leftWallMesh = new THREE.Mesh(wallGeometry, material);
+            leftWallMesh.position.set(24, WALL_Y, 0);
+            group.add(leftWallMesh);
+
+            for (let j = 0; j < 8; j++) {
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(0, 9 * j, 0);
+                group.add(mesh);
+            }
+
+            group.position.x = Math.random() * 1600 - 800;
+            group.position.y = 0;
+            group.position.z = Math.random() * 1600 - 800;
+            group.updateMatrix();
+            group.matrixAutoUpdate = false;
+            scene.add(group);
+        }
+
+        // lights
+
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 3);
+        dirLight1.position.set(1, 1, 1);
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0x002288, 3);
+        dirLight2.position.set(- 1, - 1, - 1);
+        scene.add(dirLight2);
+
+        const ambientLight = new THREE.AmbientLight(0x555555);
+        scene.add(ambientLight);
+
+        const animate = () => {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        };
+
+        animate();
+        //
+
+        //window.addEventListener('resize', onWindowResize);
+        return () => {
+            ref.current?.removeChild(renderer.domElement);
+        }
+    }, []);
+
+    return (
+        <div ref={ref} style={{backgroundColor: "white"}}>
+            Mount something here.
+        </div>
+    );
 }
