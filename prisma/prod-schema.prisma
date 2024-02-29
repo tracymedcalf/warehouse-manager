@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// TODO: Need to normalize the capitalization of table references.
+
 datasource db {
   provider     = "mysql"
   url          = env("DATABASE_URL")
@@ -35,6 +35,7 @@ model Sku {
   price       Decimal      @db.Decimal(15, 2)
   assignment  Assignment[]
   Inventory   Inventory[]
+  hits        Float
 }
 
 model Inventory {
@@ -50,18 +51,31 @@ model Inventory {
 }
 
 model PickLocation {
-  id          Int         @id @default(autoincrement())
-  barcode     String      @db.VarChar(6)
-  name        String      @db.VarChar(15)
-  putawayType String
-  width       Float
-  length      Float
-  height      Float
-  maxWeight   Float
-  ranking     Int
-  zone        String      @db.VarChar(3)
-  assignment  Assignment?
-  Inventory   Inventory[]
+  id                 Int              @id @default(autoincrement())
+  barcode            String           @db.VarChar(6)
+  name               String           @db.VarChar(15)
+  putawayType        String
+  width              Float
+  length             Float
+  height             Float
+  maxWeight          Float
+  ranking            Int
+  zone               String           @db.VarChar(3)
+  assignment         Assignment?
+  Inventory          Inventory[]
+  // Delete these 3 lines?
+  Bay                PhysicalLocation? @relation(fields: [physicalLocationId], references: [id])
+  physicalLocationId Int?
+  @@index([physicalLocationId])
+}
+
+model PhysicalLocation {
+  id           Int            @id @default(autoincrement())
+  type         String
+  x            Float
+  y            Float
+  putawayType  String?
+  PickLocation PickLocation[]
 }
 
 // Necessary for Next auth

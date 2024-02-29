@@ -90,6 +90,26 @@ export const pickLocationRouter = createTRPCRouter({
 
     }),
 
+  getAllWithoutPhysical: publicProcedure
+    .query(async ({ ctx }) => {
+      return (await ctx.db.pickLocation
+        .findMany({
+          where: {
+            physicalLocationId: null
+          },
+          take: 1000
+        })
+      ).map(row => {
+        const { id, name, putawayType } = row;
+        return {
+          id,
+          name,
+          putawayType,
+        };
+      })
+
+    }),
+
   getSecretMessage: protectedProcedure.query(() => {
     return "You are logged into Warehouse Manager!";
   }),

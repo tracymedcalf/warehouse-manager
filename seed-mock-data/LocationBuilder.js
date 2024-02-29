@@ -45,7 +45,8 @@ export default class LocationBuilder
                         length: 24,
                         height: 14,
                         ranking: 50,
-                        zone: this.zone
+                        zone: this.zone,
+                        physicalLocationId: null,
                     });
                 }
             }
