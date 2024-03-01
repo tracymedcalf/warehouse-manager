@@ -6,6 +6,10 @@ body {
     @apply bg-black text-slate-100;
 }
 
+input, select {
+    color: black;
+}
+
 .styled-table {
     border-collapse: collapse;
     margin: 25px 0;

@@ -170,6 +170,7 @@ export default function Skus() {
     const mutation = api.sku.autoAssign.useMutation();
 
     const handleClick = () => {
+        console.log("data ", data)
         if (data == null) {
             return;
         }
@@ -180,6 +181,7 @@ export default function Skus() {
         if (selected.length < keys.length) {
             return;
         }
+        console.log("select ", selected);
         mutation.mutate(selected);
     };
 

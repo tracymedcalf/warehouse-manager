@@ -103,7 +103,7 @@ export default
                         {data.putawayTypes.map(p => <option value={p}>{p}</option>)}
                     </select>
                     <input
-                        className="border-2 max-w-xs border-white hover:bg-slate-500"
+                        className="border-2 max-w-xs border-white hover:bg-slate-500 text-white"
                         disabled={mutation.isLoading}
                         type="submit"
                     />

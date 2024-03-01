@@ -1,5 +1,6 @@
-import { z } from "zod";
+import _ from "lodash";
 import type { Prisma } from "@prisma/client";
+import { z } from "zod";
 
 import {
   createTRPCRouter,
@@ -28,7 +29,6 @@ const transformPickLocation = (assignment: PickLocAssignment) => {
     putawayType: assignment.pickLocation.putawayType,
   };
 }
-
 
 export const skuRouter = createTRPCRouter({
 
@@ -109,44 +109,45 @@ export const skuRouter = createTRPCRouter({
 
     }),
 
-    autoAssign: protectedProcedure
+    autoAssign: publicProcedure
     .input(z.array(z.number().int()))
     .mutation(async ({ ctx, input }) => {
-
       const skus = await ctx.db.sku.findMany({
-        select: { id: true, name: true, putawayType: true, hits: true },
+        select: { id: true, name: true, putawayType: true, hits: true, assignment: true },
         where: { 
           id: { in: input },
-          assignment: {
-            none: {}
-          },
         },
         orderBy: {
           hits: "desc"
         }
       });
-
+     
+      const [skusWithoutAssignments, skusWithAssignments] = _.partition(
+        skus,
+        s => s.assignment.length === 0
+      );
+      
       const locs = await ctx.db.pickLocation.findMany({
         select: {
           id: true,
           name: true,
           putawayType: true,
-          x: true,
-          y: true
         },
         where: { assignment: null }
       });
 
-      const hotspots = await ctx.db.hotspot.findMany({
-        select: { putawayType: true, x: true, y: true },
-      });
-
-      const result = suggestAssignments(skus, locs, hotspots);
+      const result = suggestAssignments(skusWithoutAssignments, locs);
 
       for (const { pickLocationId, skuId } of result.assignments) {
         await ctx.db.assignment.create({
           data: { pickLocationId, skuId }
         });
+      }
+
+      const HAS_ASSIGNMENT = "HAS ASSIGNMENT";
+
+      for (const s of skusWithAssignments) {
+        result.skusCantAssign.push({ reason: HAS_ASSIGNMENT, ...s });
       }
 
       return result;

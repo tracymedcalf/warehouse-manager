@@ -1,6 +1,7 @@
-import type { inferRouterOutputs } from '@trpc/server';
-import type { NewAssignment, skuRouter } from '~/server/api/routers/sku';
 import SkuLink from './skuLink';
+import type { NewAssignment } from "~/utils/suggestAssignments";
+import type { inferRouterOutputs } from '@trpc/server';
+import type { skuRouter } from '~/server/api/routers/sku';
 
 function SkusCantAssignRow(
     { id, name, reason }: { id: number; name: string; reason: string }
@@ -27,14 +28,17 @@ function AssignmentRow({ skuName, skuId, pickLocationId, pickLocationName }: New
 }
 
 export default function AutoAssign({ data }: { data: AutoAssignOutput }) {
+    console.log("data ", data);
     const { assignments, skusCantAssign } = data;
     return (
         <div>
             <div>
                 <table>
                     <thead>
-                        <th>SKU Name</th>
-                        <th>Pick Location</th>
+                        <tr>
+                            <th>SKU Name</th>
+                            <th>Pick Location</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {assignments.map(a => <AssignmentRow {...a} />)}
@@ -44,8 +48,10 @@ export default function AutoAssign({ data }: { data: AutoAssignOutput }) {
             <div>
                 <table>
                     <thead>
-                        <th>SKU Name</th>
-                        <th>Reason</th>
+                        <tr>
+                            <th>SKU Name</th>
+                            <th>Reason</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {skusCantAssign.map(s => <SkusCantAssignRow {...s} />)}
